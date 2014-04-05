@@ -170,13 +170,20 @@ Puppet::Type.type(:yumrepo).provide(:inifile) do
   # Create all of our setters.
   mk_resource_methods
   PROPERTIES.each do |property|
-    # Exclude ensure, as we don't need to create an ensure=
     next if property == :ensure
-    # Builds the property= method.
+
     define_method("#{property.to_s}=") do |value|
-      section(@property_hash[:name])[property.to_s] = value
-      @property_hash[property] = value
+      set_property(property, value)
     end
+  end
+
+  def set_property(property, value)
+    if value == :absent
+      section(@property_hash[:name])[property.to_s] = nil
+    else
+      section(@property_hash[:name])[property.to_s] = value
+    end
+    @property_hash[property] = value
   end
 
   # @return [Boolean] Returns true if ensure => present.
