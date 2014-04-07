@@ -158,25 +158,30 @@ module Puppet::Util::IniConfig
         # Start by deleting sections we don't want in the resulting output.
         count = sections.count
         sections.delete_if {|section| section.is_a?(Section) && section.destroy? == true}
+        # If we have no sections left, just delete the file.
+        if sections.count == 0
+          ::File.unlink(file)
+          @files.delete(file)
         # If the number of sections we're dealing with is now smaller then
         # we're going to need to flush the file out even if no other section
         # changed.
-        if sections.count < count
+        elsif sections.count < count
           dirty = true
-        end
-        sections.each do |l|
-          if l.is_a?(Section)
-            dirty ||= l.dirty?
-            destroy ||= l.dirty?
-            text << l.format
-            l.mark_clean
-          else
-            text << l
+        else
+          sections.each do |l|
+            if l.is_a?(Section)
+              dirty ||= l.dirty?
+              destroy ||= l.dirty?
+              text << l.format
+              l.mark_clean
+            else
+              text << l
+            end
           end
-        end
-        if dirty
-          Puppet::Util::FileType.filetype(:flat).new(file).write(text)
-          return file
+          if dirty
+            Puppet::Util::FileType.filetype(:flat).new(file).write(text)
+            return file
+          end
         end
       end
     end
